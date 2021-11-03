@@ -41,6 +41,8 @@ function createWindow() {
         // when you should delete the corresponding element.
         mainWindow = null
     })
+
+    createSerialPort()
 }
 
 // This is required to be set to false beginning in Electron v9 otherwise
@@ -68,6 +70,74 @@ app.on('activate', function() {
     if (mainWindow === null) {
         createWindow()
     }
+})
+
+function createSerialPort(mainWindow){
+    const SerialPort = require('serialport')
+    //开启串口，并发送到渲染线程中
+    const port = new SerialPort('/dev/cu.usbmodem0000000000005');
+
+    // port.open(function (err) {
+    //     if (err) {
+    //       return console.log('Error opening port: ', err.message)
+    //     }
+      
+    //     // Because there's no callback to write, write errors will be emitted on the port:
+   
+    //   })
+
+      port.write('help')
+
+      const Readline = SerialPort.parsers.Readline
+      const parser = new Readline()
+      parser.on('data', function (data) {
+        console.log('------------------received')
+      })
+
+    // port.on('readable',function(data){
+    //     let strData = data+''
+    //     console.log(data)
+    //     //0 MW +00079.86 mm  
+    //     // let nValue = strData.replace('0 MW','').replace('mm','').trim()
+    //     // mainWindow.webContents.send("marh-data",parseFloat(nValue))
+    // });
+    // const parser = sp.pipe(new Readline({ delimiter: '\r\n' }));
+    // parser.on('data', function (some ) {
+    //     console.log(some);
+    // });
+
+
+    setTimeout(() => {
+        //writeonSer("help")
+        port.write('help', function(err) {
+            if (err) {
+                return console.log('Error on write: ', err.message);
+            }
+            console.log('message written');
+        });
+    }, 2000);
+}
+
+function writeonSer(data){
+    //Write the data to serial port.
+    sp.write( data, function(err) {
+        if (err) {
+            return console.log('Error on write: ', err.message);
+        }
+        console.log('message written');
+    });
+
+}
+
+const { ipcMain } = require('electron')
+ipcMain.on('asynchronous-message', (event, arg) => {
+  console.log(arg) // prints "ping"
+  event.reply('asynchronous-reply', 'pong')
+})
+
+ipcMain.on('synchronous-message', (event, arg) => {
+  console.log(arg) // prints "ping"
+  event.returnValue = 'pong'
 })
 
 // In this file you can include the rest of your app's specific main process
